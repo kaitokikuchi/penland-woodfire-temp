@@ -22,7 +22,7 @@ source_melted = source.reset_index(drop=True).melt(
 
 target_temp = pd.read_csv(
     "Penland_Woodfiring_Temp_2024.csv",
-    usecols=["Time", "Target Temperature"],
+    usecols=["Time", "Target"],
 )
 
 # Rename "Time" column to "Timestamp" and convert to datetime
