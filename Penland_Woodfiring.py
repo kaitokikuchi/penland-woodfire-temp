@@ -17,7 +17,7 @@ source = get_data()
 
 # Melt the source data for altair plotting
 source_melted = source.reset_index(drop=True).melt(
-    "Timestamp", var_name="Measurements", value_name="temp"
+    "Timestamp", var_name="Data", value_name="temp"
 )
 
 target_temp = pd.read_csv(
@@ -37,9 +37,7 @@ target_temp = target_temp.resample(
 target_temp = target_temp.reset_index()
 
 # Melt the target temperature data for altair plotting
-target_temp_melted = target_temp.melt(
-    "Timestamp", var_name="Measurements", value_name="temp"
-)
+target_temp_melted = target_temp.melt("Timestamp", var_name="Data", value_name="temp")
 
 # Combine the data
 combined_data = pd.concat([source_melted, target_temp_melted])
@@ -56,7 +54,7 @@ line = (
     .encode(
         x=alt.X("yearmonthdatehoursminutes(Timestamp):T", title="Time"),
         y=alt.Y("temp:Q", title="Temperature (F)"),
-        color="Measurements:N",
+        color="Data:N",
     )
 )
 
@@ -93,7 +91,7 @@ tooltip = (
     .mark_text(align="left", dx=5, dy=-5)
     .encode(
         text=alt.condition(nearest, alt.Text("temp:Q", format=".2f"), alt.value(" ")),
-        color=alt.Color("Measurements:N"),
+        color=alt.Color("Data:N"),
     )
     .transform_filter(nearest)
 )
