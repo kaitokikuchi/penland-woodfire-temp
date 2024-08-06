@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from streamlit_gsheets import GSheetsConnection
 
 
@@ -44,7 +45,7 @@ combined_data = combined_data.fillna(method="bfill")
 
 # Melt the data frame for Plotly Express
 melted_data = combined_data.melt(
-    id_vars=["Timestamp"],
+    id_vars=["Timestamp", "Comments"],
     value_vars=["Front", "Middle", "Back", "Target"],
     var_name="Measurement",
     value_name="Temperature",
@@ -57,8 +58,24 @@ fig = px.line(
     y="Temperature",
     color="Measurement",
     labels={"Temperature": "Temperature (F)", "Measurement": "Measurement"},
-    title="Temperature Measurements",
+    title="Kiln Temperature Measurements",
+    # hover_data={"Comments": True},  # Include comments in hover data
 )
+
+# Add points for comments on the Front Chamber Temp line
+comments_data = source[["Timestamp", "Comments"]].dropna().reset_index(drop=True)
+# fig.add_trace(
+#     go.Scatter(
+#         x=comments_data["Timestamp"],
+#         y=comments_data["Front"],
+#         mode="markers",
+#         marker=dict(size=8, color="red"),
+#         name="Comments",
+#         text=comments_data["Comments"],
+#         hoverinfo="text",
+#     )
+# )
+
 
 # Update layout for hover mode and axis titles
 fig.update_layout(
@@ -69,3 +86,7 @@ fig.update_layout(
 
 # Display the plotly chart in Streamlit
 st.plotly_chart(fig, use_container_width=True)
+st.dataframe(comments_data, use_container_width=True)
+if st.button("Clear Cache"):
+    # Clears all st.cache_data caches:
+    st.cache_data.clear()
