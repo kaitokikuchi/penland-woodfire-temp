@@ -89,6 +89,9 @@ fig.update_layout(
 # Display the plotly chart in Streamlit
 st.plotly_chart(fig, use_container_width=True)
 st.dataframe(comments_data, use_container_width=True)
-if st.button("Clear Cache"):
+
+
+if st.button("Refresh Data"):
     # Clears all st.cache_data caches:
     st.cache_data.clear()
+    st.rerun()
