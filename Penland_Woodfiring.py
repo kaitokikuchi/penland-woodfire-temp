@@ -71,6 +71,9 @@ fig = px.line(
 comments_data = (
     source[["Timestamp", "Front", "Comments"]].dropna().reset_index(drop=True)
 )
+# sort in descending order based on Timestamp
+comments_data = comments_data.sort_values(by="Timestamp", ascending=False)
+
 # fig.add_trace(
 #     go.Scatter(
 #         x=comments_data["Timestamp"],
