@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
-import altair as alt
+import plotly.express as px
 from streamlit_gsheets import GSheetsConnection
 
 
+@st.cache_data
 def get_data():
     # Create a connection object.
     conn = st.connection("gsheets", type=GSheetsConnection)
@@ -15,11 +16,7 @@ def get_data():
 
 source = get_data()
 
-# Melt the source data for altair plotting
-source_melted = source.reset_index(drop=True).melt(
-    "Timestamp", var_name="Data", value_name="temp"
-)
-
+# Read target temperature data
 target_temp = pd.read_csv(
     "Penland_Woodfiring_Temp_2024.csv",
     usecols=["Time", "Target"],
@@ -36,69 +33,39 @@ target_temp = target_temp.resample(
 ).interpolate()  # Resample to minute intervals and interpolate
 target_temp = target_temp.reset_index()
 
-# Melt the target temperature data for altair plotting
-target_temp_melted = target_temp.melt("Timestamp", var_name="Data", value_name="temp")
+# Merge source data and target temperature data
+combined_data = source.merge(target_temp, on="Timestamp", how="outer")
 
-# Combine the data
-combined_data = pd.concat([source_melted, target_temp_melted])
+# Sort data by datetime
+combined_data = combined_data.sort_values(by="Timestamp")
 
-# Create a selection that chooses the nearest point & selects based on x-value
-nearest = alt.selection_point(
-    nearest=True, on="mouseover", fields=["Timestamp"], empty=False
+# Fill missing values
+combined_data = combined_data.fillna(method="bfill")
+
+# Melt the data frame for Plotly Express
+melted_data = combined_data.melt(
+    id_vars=["Timestamp"],
+    value_vars=["Front", "Middle", "Back", "Target"],
+    var_name="Measurement",
+    value_name="Temperature",
 )
 
-# The basic line
-line = (
-    alt.Chart(combined_data)
-    .mark_line(interpolate="basis")
-    .encode(
-        x=alt.X("yearmonthdatehoursminutes(Timestamp):T", title="Time"),
-        y=alt.Y("temp:Q", title="Temperature (F)"),
-        color="Data:N",
-    )
+# Create the plotly figure using plotly express
+fig = px.line(
+    melted_data,
+    x="Timestamp",
+    y="Temperature",
+    color="Measurement",
+    labels={"Temperature": "Temperature (F)", "Measurement": "Measurement"},
+    title="Temperature Measurements",
 )
 
-# Transparent selectors across the chart. This is what tells us
-# the x-value of the cursor
-selectors = (
-    alt.Chart(combined_data)
-    .mark_point()
-    .encode(
-        x=alt.X("yearmonthdatehoursminutes(Timestamp):T", title="Time"),
-        opacity=alt.value(0),
-    )
-    .add_params(nearest)
+# Update layout for hover mode and axis titles
+fig.update_layout(
+    hovermode="x unified",
+    xaxis_title="Time",
+    yaxis_title="Temperature (F)",
 )
 
-# Draw points on the line, and highlight based on selection
-points = line.mark_point().encode(
-    opacity=alt.condition(nearest, alt.value(1), alt.value(0))
-)
-
-# Draw a rule at the location of the selection
-rules = (
-    alt.Chart(combined_data)
-    .mark_rule(color="gray")
-    .encode(
-        x=alt.X("yearmonthdatehoursminutes(Timestamp):T", title="Time"),
-    )
-    .transform_filter(nearest)
-)
-
-# Tooltip showing the temperature values for each measurement
-tooltip = (
-    alt.Chart(combined_data)
-    .mark_text(align="left", dx=5, dy=-5)
-    .encode(
-        text=alt.condition(nearest, alt.Text("temp:Q", format=".2f"), alt.value(" ")),
-        color=alt.Color("Data:N"),
-    )
-    .transform_filter(nearest)
-)
-
-# Combine all layers into one chart
-data_layer = alt.layer(line, selectors, points, rules, tooltip).properties(
-    width=800, height=400
-)
-
-st.altair_chart(data_layer, use_container_width=True)
+# Display the plotly chart in Streamlit
+st.plotly_chart(fig, use_container_width=True)
