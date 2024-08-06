@@ -4,6 +4,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 from streamlit_gsheets import GSheetsConnection
 
+if st.button("Refresh Data"):
+    # Clears all st.cache_data caches:
+    st.cache_data.clear()
+    st.rerun()
+
 
 @st.cache_data
 def get_data():
@@ -89,9 +94,3 @@ fig.update_layout(
 # Display the plotly chart in Streamlit
 st.plotly_chart(fig, use_container_width=True)
 st.dataframe(comments_data, use_container_width=True)
-
-
-if st.button("Refresh Data"):
-    # Clears all st.cache_data caches:
-    st.cache_data.clear()
-    st.rerun()
