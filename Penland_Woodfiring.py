@@ -63,7 +63,9 @@ fig = px.line(
 )
 
 # Add points for comments on the Front Chamber Temp line
-comments_data = source[["Timestamp", "Comments"]].dropna().reset_index(drop=True)
+comments_data = (
+    source[["Timestamp", "Front", "Comments"]].dropna().reset_index(drop=True)
+)
 # fig.add_trace(
 #     go.Scatter(
 #         x=comments_data["Timestamp"],
